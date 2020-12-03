@@ -1,0 +1,300 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                |                                                 |
+| \      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \    /   O peration     | Version:  5                                     |
+|   \  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "constant";
+    object      href_nlgf;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 1 0 0 0 0 0];
+#include "../parameters";
+
+internalField   #codeStream
+{
+
+  codeInclude
+    #{
+    #include "fvCFD.H"
+    #};
+
+  codeOptions
+    #{
+    -I$(LIB_SRC)/finiteVolume/lnInclude		\
+    -I$(LIB_SRC)/meshTools/lnInclude
+    #};
+
+    codeLibs
+    #{
+    -lmeshTools					\
+    -lfiniteVolume
+    #};
+
+    code
+    #{
+    #include "../../parametersCode"
+
+  const IOdictionary& d = static_cast<const IOdictionary&>(dict);
+  const fvMesh& mesh = refCast<const fvMesh>(d.db());
+  scalarField href_nlgf(mesh.nCells(), y9);
+  
+  forAll(href_nlgf, i)
+    {
+      const scalar xc = mesh.C()[i][0];
+      
+      if(xc <= x9)
+	{
+	  href_nlgf[i] = y3+(xc-x3)*tan(constant::mathematical::pi/2-ang);
+	}
+      else if(xc > x9 && xc <= x10){
+	href_nlgf[i] = y10+(x10-xc)*tan(ang);
+      }
+      else if(xc > x10){
+	href_nlgf[i] = y10;
+      }
+    }
+  href_nlgf.writeEntry("", os);
+  #};  
+  };
+
+boundaryField
+{
+    left
+    {
+        type codedFixedValue;
+        value uniform $y9;
+        redirectType left_href;
+        code
+        #{
+	      #include "../../../parametersCode"
+            const fvPatch& boundaryPatch = patch();
+            const vectorField& Cf = boundaryPatch.Cf();
+            scalarField& href_nlgf = *this;
+	    
+            forAll(href_nlgf,i)
+            {
+	      const scalar xc = Cf[i][0];
+	      
+	      if(xc <= x9)
+		{
+		  href_nlgf[i] = y3+(xc-x3)*tan(constant::mathematical::pi/2-ang);
+		}
+	      else if(xc > x9 && xc <= x10){
+		href_nlgf[i] = y10+(x10-xc)*tan(ang);
+	      }
+	      else if(xc > x10){
+		href_nlgf[i] = y10;
+	      }
+            }
+        #};
+
+        codeInclude
+        #{
+        #};
+
+        codeOptions
+        #{
+        #};
+    }
+    ramp
+        {
+     	type codedFixedValue;
+        value uniform $y9;
+        redirectType ramp_href;
+     	code
+	#{
+    #include "../../../parametersCode"
+	const fvPatch& boundaryPatch = patch();
+	const vectorField& Cf = boundaryPatch.Cf();
+	scalarField& href_nlgf = *this;
+
+            forAll(href_nlgf,i)
+            {
+              const scalar xc = Cf[i][0];
+
+              if(xc <= x9)
+                {
+                  href_nlgf[i] = y3+(xc-x3)*tan(constant::mathematical::pi/2-ang);
+      	        }
+              else if(xc > x9 && xc <= x10){
+                href_nlgf[i] = y10+(x10-xc)*tan(ang);
+              }
+              else if(xc > x10){
+                href_nlgf[i] = y10;
+              }
+            }
+        #};
+
+        codeInclude
+        #{
+     	#};
+
+        codeOptions
+	#{
+        #};
+    }
+    top
+        {
+     	type codedFixedValue;
+        value uniform $y9;
+        redirectType top_href;
+     	code
+	#{
+    #include "../../../parametersCode"
+        const fvPatch& boundaryPatch = patch();
+        const vectorField& Cf = boundaryPatch.Cf();
+        scalarField& href_nlgf = *this;
+
+            forAll(href_nlgf,i)
+            {
+              const scalar xc = Cf[i][0];
+              if(xc <= x9)
+                {
+                  href_nlgf[i] = y3+(xc-x3)*tan(constant::mathematical::pi/2-ang);
+      	        }
+              else if(xc > x9 && xc <= x10){
+                href_nlgf[i] = y10+(x10-xc)*tan(ang);
+              }
+              else if(xc > x10){
+                href_nlgf[i] = y10;
+              }
+            }
+        #};
+
+        codeInclude
+        #{
+     	#};
+
+        codeOptions
+	#{
+        #};
+    }
+    right
+        {
+     	type codedFixedValue;
+        value uniform $y9;
+        redirectType right_href;
+     	code
+	#{
+	      #include "../../../parametersCode"
+
+        const fvPatch& boundaryPatch = patch();
+        const vectorField& Cf = boundaryPatch.Cf();
+        scalarField& href_nlgf = *this;
+
+            forAll(href_nlgf,i)
+            {
+              const scalar xc = Cf[i][0];
+
+              if(xc <= x9)
+                {
+                  href_nlgf[i] = y3+(xc-x3)*tan(constant::mathematical::pi/2-ang);
+      	        }
+              else if(xc > x9 && xc <= x10){
+                href_nlgf[i] = y10+(x10-xc)*tan(ang);
+              }
+              else if(xc > x10){
+                href_nlgf[i] = y10;
+              }
+            }
+        #};
+
+        codeInclude
+        #{
+     	#};
+
+        codeOptions
+	#{
+        #};
+    }
+    bottom
+        {
+     	type codedFixedValue;
+        value uniform $y9;
+        redirectType bottom_href;
+     	code
+	#{
+	      #include "../../../parametersCode"
+	  
+        const fvPatch& boundaryPatch = patch();
+        const vectorField& Cf = boundaryPatch.Cf();
+        scalarField& href_nlgf = *this;
+
+            forAll(href_nlgf,i)
+            {
+              const scalar xc = Cf[i][0];
+
+              if(xc <= x9)
+                {
+                  href_nlgf[i] = y3+(xc-x3)*tan(constant::mathematical::pi/2-ang);
+      	        }
+              else if(xc > x9 && xc <= x10){
+                href_nlgf[i] = y10+(x10-xc)*tan(ang);
+              }
+              else if(xc > x10){
+                href_nlgf[i] = y10;
+              }
+            }
+        #};
+
+        codeInclude
+        #{
+     	#};
+
+        codeOptions
+	#{
+        #};
+    }
+    gate
+      {
+        type codedFixedValue;
+        value uniform $y9;
+        redirectType bottom_href;
+        code
+        #{
+        #include "../../../parametersCode"
+        const fvPatch& boundaryPatch = patch();
+        const vectorField& Cf = boundaryPatch.Cf();
+        scalarField& href_nlgf = *this;
+
+            forAll(href_nlgf,i)
+            {
+              const scalar xc = Cf[i][0];
+
+              if(xc <= x9)
+                {
+                  href_nlgf[i] = y3+(xc-x3)*tan(constant::mathematical::pi/2-ang);
+                }
+              else if(xc > x9 && xc <= x10){
+                href_nlgf[i] = y10+(x10-xc)*tan(ang);
+              }
+	      else if(xc > x10){
+                href_nlgf[i] = y10;
+              }
+            }
+	#};
+
+        codeInclude
+	#{
+        #};
+
+	codeOptions
+	#{
+	#};
+      }
+    defaultFaces
+    {
+        type            empty;
+    }
+}
+  
+
+// ************************************************************************* //

@@ -1,0 +1,112 @@
+/*--------------------------------*- C++ -*----------------------------------* \
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  5                                     |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      turbulenceProperties.particles;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include "../parameters"
+simulationType  RAS;
+
+RAS
+{
+    RASModel fcicKineticTheory;
+
+    turbulence      off;
+    printCoeffs     on;
+
+    fcicKineticTheoryCoeffs
+    {
+        equilibrium             off;
+
+        e                       0.8;
+        alphaMax                0.65;
+        alphaMinFriction        0.5;
+        residualAlpha           1e-4;
+	
+
+	//        viscosityModel          Gidaspow;
+     	viscosityModel              eulerNonlocalGF;
+        conductivityModel           Gidaspow;
+	fcicGranularPressureModel   nlgf;//muI;//bauyer;//muI;
+        granularPressureModel       Lun;//SyamlalRogersOBrien;//Lun;
+        frictionalStressModel       JohnsonJacksonSchaeffer;
+        radialModel                 SinclairJackson;
+
+
+	eulerNonlocalGFCoeffs
+	{
+	  nu0          [ 0 2 -1 0 0 0 0 ]       $muMax; // maximum kinematic viscosity
+	  graind       [ 0 1  0 0 0 0 0 ]       $dS; // grain diameter, m
+	  fcs          [ 0 0  0 0 0 0 0 ]       $muS;//0.437; // mus_s
+	  delfc        [ 0 0  0 0 0 0 0 ]       $delmu;//0.476; // delta mu
+	  in0          [ 0 0  0 0 0 0 0 ]       $I_0;//0.055; // I_0
+	  A_nlgf       [ 0 0  0 0 0 0 0 ]       $A; // A
+	  t0inv_nlgf   [0 0  -1 0 0 0 0 ]       $inv_t0; // 1/s what should this be?// if this is larger the flow will stop early
+	  pres_offset          $p0;//9.990e4;
+	  alphaThreshold       0.5000;      // if not set then = 0.1
+	  nCell                40.000;      // if not set then 10
+	  rho                  $rhoS;
+	  relaxppres   [ 0 0  0 0 0 0 0 ]       0.3;
+	}
+	
+
+	nlgfCoeffs
+          {
+            alphaThreshold       0.0100;      // if not set then = 0.1
+            nCell                40.000;      // if not set then 10
+	    theta                $angD;
+          }
+        
+	bauyerCoeffs
+          {
+	    graind       [ 0 1  0 0 0 0 0 ]       $dS;
+            b_phi       [ 0 0 0 0 0 0 0 ]        0.67; // grain diameter, m
+            rhoP        [ 1 -3 0 0 0 0 0 ]       110.0;
+            alphaMax     [ 0 0  0 0 0 0 0 ]       1;
+	  }
+	
+        muICoeffs
+          {
+            graind       [ 0 1  0 0 0 0 0 ]       $dS; // grain diameter, m
+            delfc        [ 0 0  0 0 0 0 0 ]       $delmu; // delta mu
+	    //B_phi        [ 0 0  0 0 0 0 0 ]       0.67;
+            in0          [ 0 0  0 0 0 0 0 ]       $I_0;//7.5e-1;//0.00075;//0.0014;//0.014; // I_0  //small makes it flow slower
+            alphaMax     [ 0 0  0 0 0 0 0 ]       1;
+	    rho_p        [ 1 -3 0 0 0 0 0 ]       110.0;
+          }
+	
+	SchaefferCoeffs
+        {
+            phi                     25;
+	}
+        JohnsonJacksonSchaefferCoeffs
+        {
+            Fr                      0.1;
+            eta                     2;
+            p                       5;
+            phi                     20;
+            alphaDeltaMin           0.05;
+        }
+    }
+
+    phasePressureCoeffs
+    {
+        preAlphaExp     500;
+        expMax          1000;
+        alphaMax        0.62;
+        g0              1000;
+    }
+}
+
+
+// ************************************************************************* //

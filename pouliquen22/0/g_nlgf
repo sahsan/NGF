@@ -1,0 +1,127 @@
+/*--------------------------------*- C++ -*----------------------------------* \
+| =========                |                                                 |
+| \      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \    /   O peration     | Version:  5                                     |
+|   \  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      g_nlgf;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+//#include "../parameters"
+
+dimensions      [0 0 -1 0 0 0 0];
+
+internalField   1;
+
+boundaryField
+{
+    left
+    {
+      type fixedValue;
+        value uniform 1e-6;/*
+        redirectType left_g;
+        code
+        #{
+          //      const IOdictionary& d = static_cast<const IOdictionary&>(dict);
+          #include "../../../parametersCode"
+          const fvPatch& boundaryPatch = patch();
+        const fvMesh& mesh = refCast<const fvMesh>(this->db());
+
+        volScalarField srnzF = mesh.lookupObject<volScalarField>("srnz");
+        scalarField srnz=srnzF.boundaryField()[boundaryPatch.index()];
+        volScalarField presF = db().lookupObject<volScalarField>("p_IR");
+        scalarField pres=presF.boundaryField()[boundaryPatch.index()];
+        scalarField& g_nlgf = *this;
+        forAll(g_nlgf,i)
+          {
+            scalar I = srnz[i]*(rhoS*dS*dS/(pres[i]-p0));
+            scalar mu = min(muS+delmu/(I_0/I+1),muMax);
+            g_nlgf[i] = srnz[i]/mu;
+          }
+        #};
+  codeInclude
+    #{
+    #include "fvCFD.H"
+    #};
+
+  codeOptions
+    #{
+    -I$(LIB_SRC)/finiteVolume/lnInclude         \
+    -I$(LIB_SRC)/meshTools/lnInclude
+    #};
+
+    codeLibs
+    #{
+    -lmeshTools                                 \
+    -lfiniteVolume
+    #};*/
+    }
+    ramp
+    {
+     	type fixedValue;
+        value uniform 1e-6;/*
+        redirectType ramp_g;
+        code
+        #{
+	  //	  const IOdictionary& d = static_cast<const IOdictionary&>(dict);
+	  #include "../../../parametersCode"
+          const fvPatch& boundaryPatch = patch();
+        const fvMesh& mesh = refCast<const fvMesh>(this->db());
+        
+        volScalarField srnzF = mesh.lookupObject<volScalarField>("srnz");
+	scalarField srnz=srnzF.boundaryField()[boundaryPatch.index()];
+	volScalarField presF = db().lookupObject<volScalarField>("p_IR");
+	scalarField pres=presF.boundaryField()[boundaryPatch.index()];
+	scalarField& g_nlgf = *this;
+	forAll(g_nlgf,i)
+	  {
+	    scalar I = srnz[i]*(rhoS*dS*dS/(pres[i]-p0));
+	    scalar mu = min(muS+delmu/(I_0/I+1),muMax);
+	    g_nlgf[i] = srnz[i]/mu;
+          }
+        #};
+
+  codeInclude
+    #{
+    #include "fvCFD.H"
+    #};
+
+  codeOptions
+    #{
+    -I$(LIB_SRC)/finiteVolume/lnInclude         \
+    -I$(LIB_SRC)/meshTools/lnInclude
+    #};
+
+    codeLibs
+    #{
+    -lmeshTools                                 \
+    -lfiniteVolume
+    #};*/
+    }
+    top
+    {
+      type zeroGradient;
+    }
+    right
+    {
+      type zeroGradient;
+    }
+    bottom
+    {
+      type zeroGradient;
+    }
+    defaultFaces
+    {
+        type            empty;
+    }
+}
+  
+
+// ************************************************************************* //
