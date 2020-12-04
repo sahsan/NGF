@@ -341,7 +341,7 @@ Foam::tmp<Foam::surfaceScalarField> Foam::twoPhaseSystem::Ff() const
 
 Foam::tmp<Foam::volScalarField> Foam::twoPhaseSystem::D() const
 {
-  return scalar(0.0)*turbulentDispersion_->D();
+    return turbulentDispersion_->D();
 }
 
 
@@ -430,13 +430,13 @@ void Foam::twoPhaseSystem::solve()
 
         surfaceScalarField alphaPhic1
         (
-	 fvc::flux
+            fvc::flux
             (
                 phic,
                 alpha1,
                 alphaScheme
             )
-	 + fvc::flux
+          + fvc::flux
             (
                -fvc::flux(-phir, scalar(1) - alpha1, alpharScheme),
                 alpha1,
@@ -496,7 +496,7 @@ void Foam::twoPhaseSystem::solve()
 
             phase1_.alphaPhi() = alphaPhic1;
         }
-	
+
         if (pPrimeByA_.valid())
         {
             fvScalarMatrix alpha1Eqn
@@ -510,7 +510,7 @@ void Foam::twoPhaseSystem::solve()
 
             phase1_.alphaPhi() += alpha1Eqn.flux();
         }
-	
+
         phase1_.alphaRhoPhi() =
             fvc::interpolate(phase1_.rho())*phase1_.alphaPhi();
 

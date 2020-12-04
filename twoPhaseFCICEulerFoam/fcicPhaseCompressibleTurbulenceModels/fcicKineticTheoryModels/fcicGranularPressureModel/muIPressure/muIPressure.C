@@ -1,4 +1,4 @@
-/*---------------------------------------------------------------------------*\
+/*---------------------------------------------------------------------------* \
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
 0;95;0c   \\    /   O peration     |
@@ -58,12 +58,14 @@ Foam::fcicKineticTheoryModels::fcicGranularPressureModels::muI::~muI()
 
 Foam::tmp<Foam::volScalarField>
 Foam::fcicKineticTheoryModels::fcicGranularPressureModels::muI::
-granularPressureCoeffPrime
+granularPressureCoeff
 () const
 {
   
-  dimensionedScalar smallp("smallp", dimMass/dimLength/dimTime/dimTime, 1e0);
-  dimensionedScalar smallval_sr("smallval_sr", dimless/dimTime, 1e-9);
+  dimensionedScalar smallp("smallp", dimMass/dimLength/dimTime/dimTime, 1e-6);
+  dimensionedScalar smallval_sr("smallval_sr", dimless/dimTime, 1e-6);
+  dimensionedScalar smallal("smallal", dimless, 1e-6);
+  dimensionedScalar bigP("bigP", dimMass/dimLength/dimTime/dimTime, 1e6);
   // Schneiderbauer et al. (2012) (SAP model) :: S. Schneiderbauer, A. Aigner, and S. Pirker.
   // "A comprehensive frictional-kinetic model for gas–particle flows: Analysis of fluidized and moving bed regimes."
   // Chemical Engineering Science, 80:279–292, 2012.
@@ -72,12 +74,42 @@ granularPressureCoeffPrime
     (
      "srnz_",
      max(strainRate(),smallval_sr)
-     );
+     );/*
   volScalarField granP
     (
      "granP",
      rho_*pow(((delfc_*graind_*srnz_*alpha_/in0_)/max((alphaMax_-alpha_),scalar(1.0e-4))),2)
+     );*/
+
+  /*
+  volScalarField granP
+    (
+     "granP",
+     pow(B_phi_*alpha_/max(alphaMax_-alpha_,smallal),2)*nu_b_*srnz_*rho_b_
      );
+  */  
+  Info << "delfc_ " << delfc_ << endl;
+  Info << "in0_ " << in0_ << endl;
+  volScalarField granP
+    (
+     "granP",
+     rhop_*pow(delfc_*graind_*srnz_*alpha_/in0_/max(alphaMax_-alpha_,smallal),2)
+     );
+  /*  volScalarField granPch
+    (
+     "granPch",
+     rhop_*pow(B_phi_*graind_*srnz_*alpha_/max(alphaMax_-alpha_,smallal),2)
+     );
+  */
+  
+  
+  // Info << "granPch max " << max(granPch) << endl;
+  // Info << "granPch min " << min(granPch) << endl;
+  Info << "srnz max " << max(srnz_) << endl;
+  Info << "srnz min " << min(srnz_) << endl;
+  Info << "granP max " << max(granP) << endl;
+  Info << "granP min " << min(granP) <<	endl;
+  
   /*
   volScalarField granP
     (
@@ -89,9 +121,10 @@ granularPressureCoeffPrime
   if(U_.time().outputTime())
       {
 	granP.write();
+	srnz_.write();
       }
   
-  return max(granP,smallp);
+  return min(granP,bigP);
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
@@ -109,19 +142,31 @@ Foam::fcicKineticTheoryModels::fcicGranularPressureModels::muI::muI
   graind_("graind", dimLength, coeffDict_),
   delfc_("delfc", dimless, coeffDict_),
   in0_("in0", dimless, coeffDict_),
-  alphaMax_("alphaMax", dimless, coeffDict_)
+  //  B_phi_("B_phi", dimless, coeffDict_),
+  //nu_b_("nu_b", dimLength*dimLength/dimTime , coeffDict_),
+  //rho_b_("rho_b", dimMass/dimLength/dimLength/dimLength, coeffDict_),
+  alphaMax_("alphaMax", dimless, coeffDict_),
+  rhop_("rho_p", dimMass/dimLength/dimLength/dimLength, coeffDict_)
   //  srnz_(U.mesh().lookupObject<volScalarField>("srnz"))
 {}
 
 bool Foam::fcicKineticTheoryModels::fcicGranularPressureModels::muI::read()
 {
     coeffDict_ <<= dict_.optionalSubDict(typeName + "Coeffs");
+    /*
+    coeffDict_.lookup("B_phi") >> B_phi_;
+    coeffDict_.lookup("nu_b") >> nu_b_;
+    coeffDict_.lookup("rho_b") >> rho_b_;
+    coeffDict_.lookup("alphaMax") >> alphaMax_;
+    */
     
     coeffDict_.lookup("graind") >> graind_;
     coeffDict_.lookup("delfc") >> delfc_;
     coeffDict_.lookup("in0") >> in0_;
+    //coeffDict_.lookup("B_phi") >> B_phi_;
     coeffDict_.lookup("alphaMax") >> alphaMax_;
-
+    coeffDict_.lookup("rho_p") >> rhop_;
+    
     return true;
 }
 // ************************************************************************* //

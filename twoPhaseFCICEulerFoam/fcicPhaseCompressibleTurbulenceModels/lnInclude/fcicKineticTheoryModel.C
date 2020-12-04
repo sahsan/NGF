@@ -63,13 +63,13 @@ Foam::RASModels::fcicKineticTheoryModel::fcicKineticTheoryModel
     (
         fcicKineticTheoryModels::viscosityModel::New
         (
-	 type,
-	 coeffDict_,
-	 U,
-	 phi,
-	 alpha,
-	 rho,
-	 alphaRhoPhi
+         type,
+         coeffDict_,
+         U,
+         phi,
+         alpha,
+         rho,
+         alphaRhoPhi
         )
     ),
     conductivityModel_
@@ -93,16 +93,16 @@ Foam::RASModels::fcicKineticTheoryModel::fcicKineticTheoryModel
             coeffDict_
         )
     ),
-    fcicGranularPressureModel_
+      fcicGranularPressureModel_
     (
         fcicKineticTheoryModels::fcicGranularPressureModel::New
 	(
-	 coeffDict_,
-	 U,
-	 alpha,
-	 rho
-        )
-	),
+         coeffDict_,
+         U,
+         alpha,
+         rho
+     	)
+        ),
     frictionalStressModel_
     (
         fcicKineticTheoryModels::frictionalStressModel::New
@@ -126,7 +126,7 @@ Foam::RASModels::fcicKineticTheoryModel::fcicKineticTheoryModel
         dimless,
         coeffDict_
     ),
-//sigNu_(U.mesh().lookupObject<volScalarField>("sigNu")),
+
     maxNut_
     (
         "maxNut",
@@ -134,7 +134,6 @@ Foam::RASModels::fcicKineticTheoryModel::fcicKineticTheoryModel
         coeffDict_.lookupOrDefault<scalar>("maxNut",1000)
     ),
 
-  
     Theta_
     (
         IOobject
@@ -202,22 +201,7 @@ Foam::RASModels::fcicKineticTheoryModel::fcicKineticTheoryModel
         ),
         U.mesh(),
         dimensionedScalar("zero", dimensionSet(0, 2, -1, 0, 0), 0.0)
-     )
-/*
-    sigmaDev_
-    (
-        IOobject
-        (
-            IOobject::groupName("sigmaDev", U.group()),
-            U.time().timeName(),
-            U.mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        U.mesh(),
-        sigmaDev()
-     )
-*/
+    )
 {
     if (type == typeName)
     {
@@ -248,11 +232,10 @@ bool Foam::RASModels::fcicKineticTheoryModel::read()
         e_.readIfPresent(coeffDict());
         alphaMax_.readIfPresent(coeffDict());
         alphaMinFriction_.readIfPresent(coeffDict());
-
+	fcicGranularPressureModel_->read();
         viscosityModel_->read();
         conductivityModel_->read();
         radialModel_->read();
-      	fcicGranularPressureModel_->read();
         granularPressureModel_->read();
         frictionalStressModel_->read();
 
@@ -296,61 +279,38 @@ Foam::RASModels::fcicKineticTheoryModel::R() const
                 IOobject::NO_READ,
                 IOobject::NO_WRITE
             ),
-	    - (nut_)*dev(twoSymm(fvc::grad(U_)))//*scalar(0.0)
-	    //          - (lambda_*fvc::div(phi_))*symmTensor::I
+          - (nut_)*dev(twoSymm(fvc::grad(U_)))
+          - (lambda_*fvc::div(phi_))*symmTensor::I
         )
     );
 }
-
-
-/*
-Foam::tmp<Foam::volSymmTensorField>
-Foam::RASModels::fcicKineticTheoryModel::sigmaDev() const
-{
-    return tmp<volSymmTensorField>
-    (
-        new volSymmTensorField
-        (
-            IOobject
-            (
-                IOobject::groupName("sigmaDev", U_.group()),
-                runTime_.timeName(),
-                mesh_,
-                IOobject::NO_READ,
-                IOobject::NO_WRITE
-            ),
-            rho_*(2.0*nut_*symm(fvc::grad(U_)) - (2.0/3.0)*nut_*tr(symm(fvc::grad(U_)))*symmTensor::I)
-        )
-    );
-}
-*/
 
 
 Foam::tmp<Foam::volScalarField>
 Foam::RASModels::fcicKineticTheoryModel::pPrime() const
 {
-  const volScalarField& rho = phase_.rho();
+    const volScalarField& rho = phase_.rho();
 
+    
     tmp<volScalarField> tpPrime
     (
-     Theta_
-     *granularPressureModel_->granularPressureCoeffPrime
-     (
-      alpha_,
-      radialModel_->g0(alpha_, alphaMinFriction_, alphaMax_),
-      radialModel_->g0prime(alpha_, alphaMinFriction_, alphaMax_),
-      rho,
-      e_
-      )
-      +
+      Theta_
+       *granularPressureModel_->granularPressureCoeffPrime
+        (
+            alpha_,
+            radialModel_->g0(alpha_, alphaMinFriction_, alphaMax_),
+            radialModel_->g0prime(alpha_, alphaMinFriction_, alphaMax_),
+            rho,
+            e_
+        )
+	+
      frictionalStressModel_->frictionalPressurePrime
-     (
-      phase_,
-      alphaMinFriction_,
-      alphaMax_
-      )
-     /*  +
-	 fcicGranularPressureModel_->granularPressureCoeffPrime()   */  
+      ( 
+       phase_,
+       alphaMinFriction_,
+       alphaMax_
+	)
+      //scalar(0.0)*      fcicGranularPressureModel_->granularPressureCoeff()
      );
 
     volScalarField::Boundary& bpPrime =
@@ -363,7 +323,6 @@ Foam::RASModels::fcicKineticTheoryModel::pPrime() const
             bpPrime[patchi] == 0;
         }
     }
-
 
     return tpPrime;
 }
@@ -392,8 +351,8 @@ Foam::RASModels::fcicKineticTheoryModel::devRhoReff() const
                 IOobject::NO_WRITE
             ),
           - (rho_*nut_)
-	    *dev(twoSymm(fvc::grad(U_)))//*scalar(0.0)
-	    //          - ((rho_*lambda_)*fvc::div(phi_))*symmTensor::I
+           *dev(twoSymm(fvc::grad(U_)))
+          - ((rho_*lambda_)*fvc::div(phi_))*symmTensor::I
         )
     );
 }
@@ -407,14 +366,13 @@ Foam::RASModels::fcicKineticTheoryModel::divDevRhoReff
 {
     return
     (
-     (- fvm::laplacian(rho_*nut_, U)
+      - fvm::laplacian(rho_*nut_, U)
       - fvc::div
         (
             (rho_*nut_)*dev2(T(fvc::grad(U)))
-	    //          + ((rho_*lambda_)*fvc::div(phi_))
-	    //           *dimensioned<symmTensor>("I", dimless, symmTensor::I)
-	 )
-      )
+          + ((rho_*lambda_)*fvc::div(phi_))
+           *dimensioned<symmTensor>("I", dimless, symmTensor::I)
+        )
     );
 }
 
@@ -442,55 +400,54 @@ void Foam::RASModels::fcicKineticTheoryModel::correct()
     // Calculating the radial distribution function
     gs0_ = radialModel_->g0(alpha, alphaMinFriction_, alphaMax_);
 
+    volScalarField pf
+        (
+         "pf",
+         frictionalStressModel_->frictionalPressure
+         (
+          phase_,
+          alphaMinFriction_,
+          alphaMax_
+          )
+         );
+
+    //    const volScalarField& rho = phase_.rho();
+    /*
+    volScalarField pa
+      (
+       "pa",
+       Theta_
+       *granularPressureModel_->granularPressureCoeff
+       (
+	alpha_,
+	radialModel_->g0(alpha_, alphaMinFriction_, alphaMax_),
+	phase_.rho(),
+	e_
+	)
+	);*/
+     volScalarField pa
+      (
+       "pa",
+       fcicGranularPressureModel_->granularPressureCoeff()
+       );
+    
     if (!equilibrium_)
     {
         // Particle viscosity (Table 3.2, p.47)
 
-      nut_ = viscosityModel_->calcNu();//nu(alpha, Theta_, gs0_, rho, da, e_);
-      //      sigNu_ = viscosityModel_->calcNu();
+      nut_ = viscosityModel_->calcNu(pf,pa);
 
-      //sigNu_.internalField() = nut_.internalField();
-      //sigNu_.correctBoundaryConditions();
-
-      volScalarField LunPre(
-			    "LunPre",
-			    granularPressureModel_->granularPressureCoeffPrime
-			    (
-			     alpha_,
-			     radialModel_->g0(alpha_, alphaMinFriction_, alphaMax_),
-			     radialModel_->g0prime(alpha_, alphaMinFriction_, alphaMax_),
-			     rho,
-			     e_
-			     )
-			    );
-      
-      if(U_.time().outputTime())
-	{
-	  LunPre.write();
-	}
-
-      volScalarField ThetaSqrt("sqrtTheta", sqrt(Theta_));
+        volScalarField ThetaSqrt("sqrtTheta", sqrt(Theta_));
 
         // Bulk viscosity  p. 45 (Lun et al. 1984).
-		lambda_ = scalar(0.0)*(4.0/3.0)*sqr(alpha)*da*gs0_*(1.0 + e_)*ThetaSqrt/sqrtPi;
+	lambda_ = scalar(0.0)*(4.0/3.0)*sqr(alpha)*da*gs0_*(1.0 + e_)*ThetaSqrt/sqrtPi;
 
-		//lambda_ =(4.0/3.0)*sqr(alpha)*da*gs0_*(1.0 + e_)*ThetaSqrt/sqrtPi;
-	
         // Stress tensor, Definitions, Table 3.1, p. 43
         volSymmTensorField tau
         (
-	 rho*(2.0*nut_*D)// - (2.0/3.0)*nut_*tr(D)*I)// + (lambda_ - (2.0/3.0)*nut_)*tr(D)*I)
+            rho*(2.0*nut_*D + (lambda_ - (2.0/3.0)*nut_)*tr(D)*I)
         );
 
-
-	const volScalarField justone
-            (
-             "justone",nut_/nut_
-            );
-        double volume=fvc::domainIntegrate(justone).value();
-	Info << max(nut_) <<endl;
-	Info <<	min(nut_) <<endl;
-	Info << "average(nut_):"<<fvc::domainIntegrate(nut_).value()/volume<<"\n";
         // Dissipation (Eq. 3.24, p.50)
         volScalarField gammaCoeff
         (
@@ -621,24 +578,13 @@ void Foam::RASModels::fcicKineticTheoryModel::correct()
 
     {
         // particle viscosity (Table 3.2, p.47)
-      /*      volScalarField pres_regK
-      	(
-      	 "pres_regK",
-      	 fcicGranularPressureModel_->granularPressureCoeffPrime()
-      	 );
-      */
-      nut_ = viscosityModel_->calcNu();
-      //sigNu_ = viscosityModel_->calcNu();
-      //
-      //sigNu_.internalField() = nut_.internalField();
-      //sigNu_.correctBoundaryConditions();
-      //nu(alpha, Theta_, gs0_, rho, da, e_);
+      nut_ = viscosityModel_->calcNu(pf, pa);;
 
         volScalarField ThetaSqrt("sqrtTheta", sqrt(Theta_));
 
         // Bulk viscosity  p. 45 (Lun et al. 1984).
-	        lambda_ = scalar(0.0)*(4.0/3.0)*sqr(alpha)*da*gs0_*(1.0 + e_)*ThetaSqrt/sqrtPi;
-	//lambda_ =(4.0/3.0)*sqr(alpha)*da*gs0_*(1.0 + e_)*ThetaSqrt/sqrtPi;
+        lambda_ = scalar(0.0)*(4.0/3.0)*sqr(alpha)*da*gs0_*(1.0 + e_)*ThetaSqrt/sqrtPi;
+
         // Frictional pressure
         volScalarField pf
         (

@@ -75,7 +75,17 @@ Foam::fcicKineticTheoryModels::granularPressureModels::Lun::granularPressureCoef
     const dimensionedScalar& e
 ) const
 {
+  volScalarField LunP
+    (
+     "LunP",
+     rho1*alpha1*(1.0 + 2.0*(1.0 + e)*alpha1*g0)
+     );
 
+  if(alpha1.time().outputTime())
+    {
+      LunP.write();
+    }
+  
     return rho1*alpha1*(1.0 + 2.0*(1.0 + e)*alpha1*g0);
 }
 
@@ -91,12 +101,18 @@ granularPressureCoeffPrime
     const dimensionedScalar& e
 ) const
 {
+  /*
   volScalarField LunP
     (
      "LunP",
      rho1*(1.0 + alpha1*(1.0 + e)*(4.0*g0 + 2.0*g0prime*alpha1))
      );
 
+  if(alpha1.time().outputTime())
+    {
+      LunP.write();
+    }
+  */
   return rho1*(1.0 + alpha1*(1.0 + e)*(4.0*g0 + 2.0*g0prime*alpha1));
 }
 

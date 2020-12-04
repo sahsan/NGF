@@ -42,7 +42,7 @@ namespace viscosityModels
 }
 
 Foam::tmp<Foam::volScalarField>
-Foam::fcicKineticTheoryModels::viscosityModels::muIRheology::calcNu() const
+Foam::fcicKineticTheoryModels::viscosityModels::muIRheology::calcNu(const volScalarField& pf, const volScalarField& pa) const
 {
     //need to play with the tolerances (HS: Aug 28, 2018)
     dimensionedScalar smallval_sr("smallval_sr", dimless/dimTime, 1e-8);
@@ -191,7 +191,7 @@ Foam::fcicKineticTheoryModels::viscosityModels::muIRheology::muIRheology
         rho_("rho", dimDensity, viscosityProperties),
         pres_(U.db().lookupObject<volScalarField>("p_rgh")),
         gh_(U.db().lookupObject<volScalarField>("gh")),
-        srnz_(U.mesh().lookupObject<volScalarField>("srnz")),
+        srnz_(U.mesh().lookupObject<volScalarField>("srnz"))/*,
         nu_
         (
          IOobject
@@ -203,7 +203,7 @@ Foam::fcicKineticTheoryModels::viscosityModels::muIRheology::muIRheology
           IOobject::AUTO_WRITE
          ),
          calcNu()
-        )
+	 )*/
 {}
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //

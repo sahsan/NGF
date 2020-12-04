@@ -58,7 +58,7 @@ Foam::fcicKineticTheoryModels::fcicGranularPressureModels::nlgf::~nlgf()
 
 Foam::tmp<Foam::volScalarField>
 Foam::fcicKineticTheoryModels::fcicGranularPressureModels::nlgf::
-granularPressureCoeffPrime
+granularPressureCoeff
 () const
 {
   dimensionedScalar p0("p_offset", dimMass/dimLength/dimTime/dimTime, pres_offset_);
@@ -74,9 +74,6 @@ granularPressureCoeffPrime
   alpha_h *= scalar(0.0);
   //alpha_my *= scalar(0.0);
 
-  Info << max(rho_) << endl;
-  Info << min(rho_) << endl;
-
   //  Info << C.size() << endl;
   
   int cellid;
@@ -89,44 +86,47 @@ granularPressureCoeffPrime
        	xref = C[i].x();
         yref = C[i].y();
         zref = C[i].z();
-	dy = (href_nlgf[i]-yref)/(nNormalCell-1);
+	
+        dy = (href_nlgf[i]-yref)/(nNormalCell-1);
         yc = yref;
-        trapsum = 0.0;
+	trapsum = 0.0;
+	
         for( int ii = 0; ii < nNormalCell; ii++)
-	  {
-            if(alpha_[i]<alphaBoundary){
+          {
+	                if(alpha_[i]<alphaBoundary){
               break;
             }
-	    //  Info << "Entered after Break" << endl;
-	    //	    alpha_my[i] = alpha_[ii];
+	    
             yc = yc + ii*dy;
             vector pointloc(xref,yc,zref);
             cellid = U_.mesh().findCell(pointloc);
-	    //	    Info << cellid << endl;
+	    if (cellid<0)
+	      {
+		continue;
+	      }
             if(ii == 0){
               cellid0 = cellid;
-	      
-              //Info << "ii=0" << endl;
             }
             else{
-              if(cellid < 0)
-                {
-		  //  Info << "ii<0" << endl;
-                  continue;
-                }
-	      // Info << "Entered trapz calc" << endl;
-              trapsum += 0.5*(alpha_[cellid]+alpha_[cellid0])*dy;
+	      trapsum += 0.5*(alpha_[cellid]+alpha_[cellid0])*dy;
               cellid0 = cellid;
             }
-          }
-      alpha_h[i] = trapsum;
-    }
+	    }
+	alpha_h[i] = trapsum;
+	//	if (alpha_[i]>alphaBoundary){
+	  //alpha_h[i] = alpha_[i]*(href_nlgf[i]-yref);
+	  //	}
+	  //	else{
+	  //	  alpha_h[i] = 0;
+	  //	}
+      }
 
-  Info<< "Ended field g.h_NLGF_pressure\n" << endl;
+    Info<< "Ended Calculating field g.h_NLGF\n" << endl;
 
+	    
   volScalarField pVP("pVP", (0.5)*alpha_*rho_*magSqr(U_));
-  volScalarField rho_ghP("rho_ghP", alpha_h*gravity_acc*rho_);
-  
+  volScalarField rho_ghP("rho_ghP", alpha_h*gravity_acc*rho_);//*cos(M_PI*theta_/180));
+  //  volScalarField rho_ghP("rho_ghP", alpha_*href_nlgf*gravity_acc*rho_*cos(M_PI*theta_/180));
   dimensionedScalar smallp("smallp", dimMass/dimLength/dimTime/dimTime, 1e0);
 
   //  volScalarField& pres_regN = const_cast<volScalarField&>(pres_reg);
@@ -139,7 +139,7 @@ granularPressureCoeffPrime
   volScalarField pres_regP
     (
      "pres_regP",
-     max(rho_ghP+p0,smallp)//dimensionedScalar ("smallp", dimMass/dimLength/dimTime/dimTime, 1e1))
+     max(rho_ghP,smallp)//dimensionedScalar ("smallp", dimMass/dimLength/dimTime/dimTime, 1e1))
      );
 
   //pres_regN = (max(rho_gh+pV+p0,smallp));//dimensionedScalar ("smallp", dimMass/dimLength/dimTime/dimTime, 1e1));
@@ -179,6 +179,7 @@ Foam::fcicKineticTheoryModels::fcicGranularPressureModels::nlgf::nlgf
     href_nlgf(U.mesh().lookupObject<volScalarField>("href_nlgf")),
     alphaBoundary(coeffDict_.lookupOrDefault<scalar>("alphaThreshold",0.01)),
     nNormalCell(coeffDict_.lookupOrDefault<scalar>("nCell",10)),
+    theta_(coeffDict_.lookupOrDefault<scalar>("theta",20)),
     //    pres_reg(U.mesh().lookupObject<volScalarField>("pres_reg")),
     p_rgh(U.mesh().lookupObject<volScalarField>("p")),
     href_(U.db().lookupObject<uniformDimensionedScalarField>("hRef"))
@@ -191,6 +192,7 @@ bool Foam::fcicKineticTheoryModels::fcicGranularPressureModels::nlgf::read()
     
     coeffDict_.lookup("alphaThreshold") >> alphaBoundary;
     coeffDict_.lookup("nCell") >> nNormalCell;
+    coeffDict_.lookup("theta") >> theta_;
     return true;
 }
 // ************************************************************************* //

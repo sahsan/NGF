@@ -56,10 +56,14 @@ class muI
 {
 
   dictionary coeffDict_;
+  //  dimensionedScalar B_phi_;
+  //  dimensionedScalar nu_b_;
+  //  dimensionedScalar rho_b_;
   dimensionedScalar graind_;
   dimensionedScalar delfc_;
   dimensionedScalar in0_;
   dimensionedScalar alphaMax_;
+  dimensionedScalar rhop_;
   
 public:
 
@@ -85,7 +89,7 @@ public:
     // Member Functions
 
 
-        tmp<volScalarField> granularPressureCoeffPrime
+        tmp<volScalarField> granularPressureCoeff
         () const;
 
   virtual bool read();

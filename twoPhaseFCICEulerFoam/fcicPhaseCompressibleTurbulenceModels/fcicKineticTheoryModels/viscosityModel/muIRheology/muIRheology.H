@@ -64,13 +64,10 @@ class muIRheology
   
   volScalarField pres_;
   volScalarField gh_;
-  volScalarField nu_;  
+  //  volScalarField nu_;  
   volScalarField srnz_;
   
   // Private Member Functions
-  
-  //- Calculate and return the laminar viscosity
-  tmp<volScalarField> calcNu() const;
   
   
 public:
@@ -101,29 +98,13 @@ public:
 
     // Member Functions
 
-          //- Return the laminar viscosity
-        virtual tmp<volScalarField> nu() const
-        {
-            return nu_;
-        }
+      // Member Functions
+
+    //- Calculate and return the laminar viscosity
+  tmp<volScalarField> calcNu(const volScalarField& pf, const volScalarField& pa) const;
+
+
   
-        //- Return the laminar viscosity for patch
-        virtual tmp<scalarField> nu(const label patchi) const
-        {
-            return nu_.boundaryField()[patchi];
-        }
-  
-        //- Correct the laminar viscosity
-          virtual void correct()
-        {
-            nu_ = calcNu();
-        }
-  /*  
-  virtual void assignSRT()
-  {
-    srnz_ = strainRate();;
-  }
-  */
   //- Read transportProperties dictionary
         virtual bool read();
 };

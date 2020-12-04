@@ -88,6 +88,19 @@ JohnsonJacksonSchaeffer::frictionalPressure
 {
     const volScalarField& alpha = phase;
 
+    volScalarField JJS
+      (
+       "JJS",
+       Fr_*pow(max(alpha - alphaMinFriction, scalar(0)), eta_)
+       /pow(max(alphaMax - alpha, alphaDeltaMin_), p_)
+       );
+    
+    
+    if(phase.time().outputTime())
+      {
+	JJS.write();
+      }
+    
     return
         Fr_*pow(max(alpha - alphaMinFriction, scalar(0)), eta_)
        /pow(max(alphaMax - alpha, alphaDeltaMin_), p_);
@@ -105,6 +118,7 @@ JohnsonJacksonSchaeffer::frictionalPressurePrime
 {
     const volScalarField& alpha = phase;
 
+    
     return Fr_*
     (
         eta_*pow(max(alpha - alphaMinFriction, scalar(0)), eta_ - 1.0)

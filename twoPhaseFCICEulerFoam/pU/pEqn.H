@@ -43,7 +43,7 @@ tmp<surfaceScalarField> phiF2;
     (
         fvc::interpolate
         (
-            rAU1*(D + phase1.turbulence().pPrime())
+	 rAU1*(D + phase1.turbulence().pPrime())
         )
     );
 
@@ -253,7 +253,7 @@ while (pimple.correct())
             (
                 contErr1
               - fvc::Sp(fvc::ddt(alpha1) + fvc::div(alphaPhi1), rho1)
-            )/rho1
+	     )/rho1
           + correction
             (
                 (alpha1/rho1)*
@@ -265,7 +265,7 @@ while (pimple.correct())
         pEqnComp1.ref().relax();
 
         pEqnComp2 =
-            (
+	  (
                 contErr2
               - fvc::Sp(fvc::ddt(alpha2) + fvc::div(alphaPhi2), rho2)
             )/rho2
@@ -276,21 +276,21 @@ while (pimple.correct())
                     psi2*fvm::ddt(p_rgh)
                   + fvm::div(phid2, p_rgh) - fvm::Sp(fvc::div(phid2), p_rgh)
                 )
-            );
+	    );
         pEqnComp2.ref().relax();
     }
     else
     {
         pEqnComp1 =
-	  (
-	   contErr1
+            (
+                contErr1
               - fvc::Sp(fvc::ddt(alpha1) + fvc::div(alphaPhi1), rho1)
             )/rho1
           + (alpha1*psi1/rho1)*correction(fvm::ddt(p_rgh));
 
         pEqnComp2 =
             (
-             contErr2
+                contErr2
               - fvc::Sp(fvc::ddt(alpha2) + fvc::div(alphaPhi2), rho2)
             )/rho2
           + (alpha2*psi2/rho2)*correction(fvm::ddt(p_rgh));
@@ -311,7 +311,7 @@ while (pimple.correct())
 
         solve
         (
-            pEqnComp1() + pEqnComp2() + pEqnIncomp,
+	 pEqnComp1() + pEqnComp2() + pEqnIncomp,
             mesh.solver(p_rgh.select(pimple.finalInnerIter()))
         );
 

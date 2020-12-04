@@ -54,24 +54,22 @@ class muIRheology
   dictionary muIRheologyCoeffs_;
   
 
-        dimensionedScalar graind_;
-        dimensionedScalar fcs_;
-		dimensionedScalar delfc_;
-		dimensionedScalar in0_;
-        dimensionedScalar nu0_;
-
-		dimensionedScalar rho_;
-
-        volScalarField pres_;
-        volScalarField gh_;
-        volScalarField nu_;  
-
-    // Private Member Functions
-
-        //- Calculate and return the laminar viscosity
-        tmp<volScalarField> calcNu() const;
-
-
+  dimensionedScalar graind_;
+  dimensionedScalar fcs_;
+  dimensionedScalar delfc_;
+  dimensionedScalar in0_;
+  dimensionedScalar nu0_;
+  
+  dimensionedScalar rho_;
+  
+  volScalarField pres_;
+  volScalarField gh_;
+  //  volScalarField nu_;  
+  volScalarField srnz_;
+  
+  // Private Member Functions
+  
+  
 public:
 
     //- Runtime type information
@@ -100,29 +98,13 @@ public:
 
     // Member Functions
 
-          //- Return the laminar viscosity
-        virtual tmp<volScalarField> nu() const
-        {
-            return nu_;
-        }
+      // Member Functions
+
+    //- Calculate and return the laminar viscosity
+  tmp<volScalarField> calcNu() const;
+
+
   
-        //- Return the laminar viscosity for patch
-        virtual tmp<scalarField> nu(const label patchi) const
-        {
-            return nu_.boundaryField()[patchi];
-        }
-  
-        //- Correct the laminar viscosity
-          virtual void correct()
-        {
-            nu_ = calcNu();
-        }
-  /*  
-  virtual void assignSRT()
-  {
-    srnz_ = strainRate();;
-  }
-  */
   //- Read transportProperties dictionary
         virtual bool read();
 };

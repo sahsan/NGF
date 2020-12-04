@@ -66,26 +66,23 @@ class eulerNonlocalGF
   scalar alphaBoundary;
   scalar nNormalCell;
   scalar pres_offset_;
-  scalar alphaMax_;
-
+  //    scalar alphaMax_;
+  dimensionedScalar relaxPa_;
+  
   volScalarField href_nlgf;
   volScalarField g_nlgf;
   volScalarField gsrc_expl;
   volScalarField gdcoeff;
   volScalarField gsrc_impl;
+  volScalarField ppres;
   //  volScalarField srnz;
   //  volScalarField pres_;
   uniformDimensionedVectorField g_;
   //  volScalarField p_rgh;
   //  volScalarField sigNu_;
-  volScalarField nu_;
+  //  volScalarField nu_;
   uniformDimensionedScalarField href_;
   
-
-    // Private Member Functions
-
-        //- Calculate and return the laminar viscosity
-        tmp<volScalarField> calcNu() const;
 
 
 public:
@@ -113,27 +110,17 @@ public:
   virtual ~eulerNonlocalGF();
   //  {}
 
-
     // Member Functions
 
-          //- Return the laminar viscosity
-        virtual tmp<volScalarField> nu() const
-        {
-            return nu_;
-        }
-  
-        //- Return the laminar viscosity for patch
-        virtual tmp<scalarField> nu(const label patchi) const
-        {
-            return nu_.boundaryField()[patchi];
-        }
-  
-        //- Correct the laminar viscosity
-          virtual void correct()
-        {
-            nu_ = calcNu();
-        }
 
+    // Private Member Functions
+        tmp<volScalarField> calcNu
+	(
+	 const volScalarField& pf,
+	 const volScalarField& pa
+	 ) const;  
+
+  
   //- Read transportProperties dictionary
         virtual bool read();
 };

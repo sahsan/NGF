@@ -1,1 +1,0 @@
-p_IR = p_rgh+(alpha1*rho1+alpha2*rho2)*gh;

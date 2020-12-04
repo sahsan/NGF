@@ -123,7 +123,7 @@ public:
 
 
         //- Derivative of the granular pressure coefficient
-        virtual tmp<volScalarField> granularPressureCoeffPrime
+        virtual tmp<volScalarField> granularPressureCoeff
         () const = 0;
 
         virtual bool read()

@@ -41,7 +41,7 @@ namespace viscosityModels
 }
 
 Foam::tmp<Foam::volScalarField>
-Foam::fcicKineticTheoryModels::viscosityModels::eulerNonlocalGF::calcNu() const
+Foam::fcicKineticTheoryModels::viscosityModels::eulerNonlocalGF::calcNu(const volScalarField& pf, const volScalarField& pa) const
 {
     dimensionedScalar smallval_sr("smallval_sr", dimless/dimTime, 1e-8);
     dimensionedScalar smallval_g("smallval_g", dimless/dimTime, 1e-8);
@@ -51,104 +51,74 @@ Foam::fcicKineticTheoryModels::viscosityModels::eulerNonlocalGF::calcNu() const
     dimensionedScalar b_nlgf = delfc_/in0_;
     dimensionedScalar mu2 = delfc_+fcs_;
 
-    dimensionedScalar gravity_acc = mag(g_);
-    double xref, zref, yc, yref, dy;
-    double trapsum = 0.0;
- 
-    const volVectorField& C = U_.mesh().C();
-
-     volScalarField alpha_h("alpha_h", alpha_*href_nlgf);
-
-    alpha_h *= scalar(0.0);
-
-    Info << "g = " << href_;
-
-    int cellid, cellid0;
-    
-    Info<< "Calculating field g.h_NLGF\n" << endl;    
-    /*    forAll(C,i)
-      {
-	xref = C[i].x();
-	yref = C[i].y();
-	zref = C[i].z();
-	dy = (href_nlgf[i]-yref)/(nNormalCell-1);
-	yc = yref;
-	trapsum = 0.0;
-	for( int ii = 0; ii < nNormalCell; ii++)
-	  {
-	    if(alpha_[i]<alphaBoundary){
-              break;
-            }
-	    yc = yc + ii*dy;
-	    vector pointloc(xref,yc,zref);
-	    cellid = U_.mesh().findCell(pointloc);
-	    if(ii == 0){
-	      cellid0 = cellid;
-	    }
-	    else{
-	      if(cellid < 0)
-	      {
-	        continue;
-	      }
-	      trapsum += 0.5*(alpha_[cellid]+alpha_[cellid0])*dy;
-	      cellid0 = cellid;
-	    }
-	  }
-	alpha_h[i] = trapsum;
-      }
-    Info<< "Ended Calculating field g.h_NLGF\n" << endl;
-    
-    volScalarField pV("pV", (0.5)*alpha_*rho_*magSqr(U_));
-    volScalarField rho_gh("rho_gh", alpha_h*gravity_acc*rho_);
-
-    */
-
     dimensionedScalar smallp("smallp", dimMass/dimLength/dimTime/dimTime, 1e0);
 
-    volScalarField pres_ ("pres_", U_.mesh().lookupObject<volScalarField>("p_IR")); 
-    
-    volScalarField pres_reg
-      (
-       "pres_reg",
-       max(pres_-p0,smallp)
-       );
-    // strain-rate adjusted for zero components
-    // note:VSMALL in openfoam is 1e-37 (HS: Aug 28, 2018)
-    // maybe do not need to limit strain rate? JJS 10/5/18
+    volScalarField pres_("pres_", U_.mesh().lookupObject<volScalarField>("p_IR")); 
 
-    /*    volSymmTensorField sigmaD
-      (
-       "sigmaD",
-       rho_*(2.0*sigNu_*symm(fvc::grad(U_)) - (2.0/3.0)*sigNu_*tr(symm(fvc::grad(U_)))*symmTensor::I)
-       );
-    */
     
+    
+    volScalarField pV("pV", (0.5)*rho_*magSqr(U_));
+
+        
     volScalarField srnz
         (
          "srnz",
          strainRate()
         );
+
+    volScalarField gnz
+	(
+         "gnz",
+         max(g_nlgf, smallval_g)
+        );
+
     
+    volScalarField tau_inv_par = relaxPa_*alpha_*gnz;
+
+    /*
+      volScalarField granP
+    (
+     "granP",
+     rhop_*pow(delfc_*graind_*srnz_*alpha_/in0_/max(alphaMax_-alpha_,smallal),2)
+     );
+  volScalarField granPch
+    (
+     "granPch",
+     rhop_*pow(B_phi_*graind_*srnz_*alpha_/max(alphaMax_-alpha_,smallal),2)
+     );
+    */
+
+    
+    fvScalarMatrix ppresEqn
+      (
+       fvm::ddt(ppres)
+       + fvm::div(phi_, ppres)
+       - fvm::Sp(fvc::div(phi_), ppres)
+       ==
+       tau_inv_par*(pf)
+       -fvm::Sp(tau_inv_par, ppres)
+       );
+    ppresEqn.relax();
+    ppresEqn.solve();
+    
+    volScalarField pres_reg
+      (
+       "pres_reg",
+       max(pa,smallp)
+       );
+    
+    if(U_.time().outputTime())
+    {
+      pres_reg.write();
+    }
+
+    /*
     volScalarField gnz
         (
          "gnz",
          max(g_nlgf, smallval_g)
         );
-
-      
-    if(U_.time().outputTime())
-      {
-        pres_reg.write();
-	srnz.write();
-	gnz.write();
-	//pV.write();
-	//	sigmaD.write();
-	//rho_gh.write();
-      }
-    
-    //mu is set in a way that it is between mus and mu2 -- limiting those
-    //bounds by another fraction (10%)
-    //dimensionedScalar delmu = scalar(0.1)*delfc_;
+    */
     dimensionedScalar delmu = scalar(0.05)*delfc_;
     volScalarField mu
         (
@@ -160,25 +130,25 @@ Foam::fcicKineticTheoryModels::viscosityModels::eulerNonlocalGF::calcNu() const
         );
 
     Info << "GNLGF eq" << endl;
-    
+    /*    
     fvScalarMatrix gEqn
-      (fvm::ddt(g_nlgf) ==//+ fvm::div(phi_, g_nlgf)==// + fvm::SuSp(-fvc::div(phi_), g_nlgf) ==   
-        fvm::laplacian(A_*A_*graind_*graind_*t0inv_, g_nlgf) 
+      (fvm::ddt(g_nlgf) + fvm::div(phi_, g_nlgf)// + fvm::SuSp(-fvc::div(phi_), g_nlgf) ==   
+       - fvm::laplacian(A_*A_*graind_*graind_*t0inv_, g_nlgf) == 
        - fvm::Sp(t0inv_*delfc_*(fcs_*g_nlgf - srnz)/(mu2*g_nlgf - srnz), g_nlgf)
        - fvm::Sp(t0inv_*b_nlgf*graind_*srnz * sqrt(rho_/pres_reg), g_nlgf)
        );
-    
+    */
 
 
     //    fv::options& fvOptions(fv::options::New(U_.mesh()));
-    /*
+
     fvScalarMatrix gEqn
       (fvm::ddt(g_nlgf) + fvm::div(phi_, g_nlgf) //+ fvm::SuSp(-fvc::div(phi_), g_nlgf)
        - fvm::laplacian(A_*A_*graind_*graind_*t0inv_, g_nlgf) ==
        - fvm::Sp(t0inv_*delfc_*(fcs_ - mu)/(mu2 - mu), g_nlgf)
        - fvm::Sp(t0inv_*b_nlgf*graind_*srnz * sqrt(rho_/pres_reg), g_nlgf)
        );
-    */
+
     
     gEqn.relax();
     //fvOptions.constrain(gEqn);
@@ -195,7 +165,7 @@ Foam::fcicKineticTheoryModels::viscosityModels::eulerNonlocalGF::calcNu() const
        pres_reg / max(g_nlgf,smallval_g)
        );
     
-    bool debug=true;
+    bool debug=false;
     
     //if(debug)
     //{
@@ -253,6 +223,7 @@ Foam::fcicKineticTheoryModels::viscosityModels::eulerNonlocalGF::eulerNonlocalGF
   nu0_("nu0", dimViscosity, eulerNonlocalGFCoeffs_),
   rho_("rho", dimDensity, eulerNonlocalGFCoeffs_),
   A_("A_nlgf", dimless, eulerNonlocalGFCoeffs_),
+  relaxPa_("relaxppres", dimless, eulerNonlocalGFCoeffs_),
   t0inv_("t0inv_nlgf", dimless/dimTime, eulerNonlocalGFCoeffs_),
   alphaBoundary(eulerNonlocalGFCoeffs_.lookupOrDefault<scalar>("alphaThreshold",0.01)),
   nNormalCell(eulerNonlocalGFCoeffs_.lookupOrDefault<scalar>("nCell",10)),
@@ -274,6 +245,18 @@ Foam::fcicKineticTheoryModels::viscosityModels::eulerNonlocalGF::eulerNonlocalGF
    IOobject
    (
     "g_nlgf",
+    U_.time().timeName(),
+    U_.mesh(),
+    IOobject::MUST_READ,
+    IOobject::AUTO_WRITE
+    ),
+   U_.mesh()
+   ),
+  ppres
+  (
+   IOobject
+   (
+    "ppres",
     U_.time().timeName(),
     U_.mesh(),
     IOobject::MUST_READ,
@@ -318,7 +301,7 @@ Foam::fcicKineticTheoryModels::viscosityModels::eulerNonlocalGF::eulerNonlocalGF
   //pres_(U.db().lookupObject<volScalarField>("p_rgh")),
   g_(U_.mesh().lookupObject<uniformDimensionedVectorField>("g")),
   //  srnz(U.mesh().lookupObject<volScalarField>("srnz")),
-  href_(U.db().lookupObject<uniformDimensionedScalarField>("hRef")),
+  href_(U.db().lookupObject<uniformDimensionedScalarField>("hRef"))/*,
   nu_
   (
    IOobject
@@ -330,7 +313,7 @@ Foam::fcicKineticTheoryModels::viscosityModels::eulerNonlocalGF::eulerNonlocalGF
     IOobject::AUTO_WRITE
     ),
    calcNu()
-   )
+   )*/
 {}
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -368,6 +351,7 @@ bool Foam::fcicKineticTheoryModels::viscosityModels::eulerNonlocalGF::read
     eulerNonlocalGFCoeffs_.lookup("alphaThreshold") >> alphaBoundary;
     eulerNonlocalGFCoeffs_.lookup("nCell") >> nNormalCell;
     eulerNonlocalGFCoeffs_.lookup("rho") >> rho_;
+    eulerNonlocalGFCoeffs_.lookup("relaxppres") >> relaxPa_;
 
     return true;
 }

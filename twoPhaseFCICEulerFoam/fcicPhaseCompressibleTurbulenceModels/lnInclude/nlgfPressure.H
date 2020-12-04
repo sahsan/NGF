@@ -65,7 +65,7 @@ class nlgf
   const uniformDimensionedScalarField& href_;
   scalar alphaBoundary;
   scalar nNormalCell;
-  
+  scalar theta_;
 public:
 
     //- Runtime type information
@@ -90,7 +90,7 @@ public:
     // Member Functions
 
 
-        tmp<volScalarField> granularPressureCoeffPrime
+        tmp<volScalarField> granularPressureCoeff
         () const;
 
   virtual bool read();

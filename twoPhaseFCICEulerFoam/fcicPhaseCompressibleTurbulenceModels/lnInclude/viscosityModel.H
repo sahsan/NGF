@@ -146,20 +146,10 @@ public:
         //- Return the strain rate
        virtual tmp<volScalarField> strainRate() const;
 
-  //  virtual tmp<volSymmTensorField> sigmaDev() const;
-  
-        //- Return the laminar viscosity
-  virtual tmp<volScalarField> nu() const = 0;
 
-  virtual tmp<volScalarField> calcNu() const = 0;
+virtual tmp<volScalarField> calcNu(const volScalarField& pf, const volScalarField& pa) const = 0;
   
-        //- Return the laminar viscosity for patch
-    virtual tmp<scalarField> nu(const label patchi) const = 0;
-  
-  
-  //- Correct the laminar viscosity
-    virtual void correct() = 0;
-  
+    
         //- Read transportProperties dictionary
  virtual bool read()
   {

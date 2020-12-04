@@ -107,13 +107,13 @@ Foam::fcicKineticTheoryModels::viscosityModels::eulerNonlocalGF::calcNu() const
     // strain-rate adjusted for zero components
     // note:VSMALL in openfoam is 1e-37 (HS: Aug 28, 2018)
     // maybe do not need to limit strain rate? JJS 10/5/18
-
+    /*
     volSymmTensorField sigmaD
       (
        "sigmaD",
        rho_*(2.0*sigNu_*symm(fvc::grad(U_)) - (2.0/3.0)*sigNu_*tr(symm(fvc::grad(U_)))*symmTensor::I)
        );
-    
+    */
     volScalarField srnz
         (
          "srnz",
@@ -285,10 +285,7 @@ Foam::fcicKineticTheoryModels::viscosityModels::eulerNonlocalGF::eulerNonlocalGF
     IOobject::NO_WRITE
     ), U_.mesh(), dimensionedScalar("gsrc_impl", dimless/dimTime, scalar(0.0))
    ),
-  pres_(U.db().lookupObject<volScalarField>("p")),
   g_(U_.mesh().lookupObject<uniformDimensionedVectorField>("g")),
-  p_rgh(U.mesh().lookupObject<volScalarField>("p_rgh")),
-  sigNu_(U.mesh().lookupObject<volScalarField>("sigNu")),
   href_(U.db().lookupObject<uniformDimensionedScalarField>("hRef")),
   nu_
   (
